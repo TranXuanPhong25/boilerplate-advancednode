@@ -1,9 +1,15 @@
 const passport = require('passport');
 const bcrypt = require('bcrypt');
-
+const session = require('express-session');
 module.exports = function (app, myDataBase) {
-
-   app.route('/').get((req, res) => {
+   const ensureAuthenticated = (req, res, next) => {
+      if (req.isAuthenticated()) {
+         return next();
+      }
+      res.redirect('/');
+   };
+   app.route('/').get(
+      (req, res) => {
       res.render('index', {
          title: 'Connected to Database',
          message: 'Please login',
@@ -43,20 +49,17 @@ module.exports = function (app, myDataBase) {
       });
 
 
-   const ensureAuthenticated = (req, res, next) => {
-      if (req.isAuthenticated()) {
-         return next();
-      }
-      res.redirect('/');
-   };
+ 
    app.route('/profile')
       .get(ensureAuthenticated, (req, res) => {
          res.render('profile', { username: req.user.name });
       })
    app.route('/logout')
       .get((req, res) => {
-         req.logout();
-         res.redirect('/');
+         req.logout(function(err) {
+            if (err) { return next(err); }
+            res.redirect('/');
+         });
       });
    app.route('/auth/github')
       .get(passport.authenticate('github'));

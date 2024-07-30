@@ -28,6 +28,7 @@ app.set('view engine', 'pug');
 app.set('views', './views/pug');
 
 myDB(async client => {
+  let currentUsers = 0;
   const myDataBase = await client.db('test').collection('people');
   routes(app, myDataBase);
   auth(app, myDataBase);
@@ -37,6 +38,8 @@ myDB(async client => {
   });
   io.on('connection', socket => {
     console.log('A user has connected');
+    currentUsers++;
+    io.emit('user count', currentUsers);
   });
 });
 
