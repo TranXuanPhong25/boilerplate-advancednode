@@ -1,6 +1,5 @@
 const passport = require('passport');
 const bcrypt = require('bcrypt');
-const session = require('express-session');
 module.exports = function (app, myDataBase) {
    const ensureAuthenticated = (req, res, next) => {
       if (req.isAuthenticated()) {
