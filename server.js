@@ -55,29 +55,45 @@ io.use(
 );
 
 myDB(async client => {
-  let currentUsers = 0;
+ 
   const myDataBase = await client.db('test').collection('people');
+  const connectedSockets = new Map(); // Keep track of connected sockets
+
   routes(app, myDataBase);
   auth(app, myDataBase);
   io.on('connection', socket => {
-    console.log('A user has connected');
-    currentUsers++;
-    io.emit('user count', currentUsers);
-    io.emit('user', {
-      username: socket.request.user.name,
-      currentUsers,
-      connected: true
-    });
-    socket.on('disconnect', () => {
-      console.log('A user has disconnected');
-      currentUsers--;
-      io.emit('user count', currentUsers);
+    // Check if the socket is already connected for the user
+    if(!connectedSockets.has(socket.request.user.name)){
+      connectedSockets.set(socket.request.user.name, 1);
       io.emit('user', {
         username: socket.request.user.name,
-        currentUsers,
-        connected: false
+        connectedUsers : connectedSockets.size,
+        connected: true
       });
+    }else {
+      
+      connectedSockets.set(socket.request.user.name, connectedSockets.get(socket.request.user.name) + 1);
+    }    
+    io.emit('user count',connectedSockets.size);
+
+    socket.on('disconnect', () => {
+      console.log('A user has disconnected');
+
+      if(connectedSockets.get(socket.request.user.name) === 1){
+        connectedSockets.delete(socket.request.user.name);
+
+        io.emit('user', {
+          username: socket.request.user.name,
+          connectedUsers:connectedSockets.size,
+          connected: false
+        });
+      }else {
+        connectedSockets.set(socket.request.user.name, connectedSockets.get(socket.request.user.name) - 1);
+      }
+      io.emit('user count', connectedSockets.size);
+      
     });
+
     socket.on('chat message', message => {
       io.emit('chat message', { username: socket.request.user.name, message });
     });
@@ -86,8 +102,6 @@ myDB(async client => {
   app.route('/').get((req, res) => {
     res.render('index', { title: e, message: 'Unable to connect to database' });
   });
-
-
 });
 
 
