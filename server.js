@@ -4,6 +4,8 @@ const express = require('express');
 const myDB = require('./connection');
 const fccTesting = require('./freeCodeCamp/fcctesting.js');
 const app = express();
+const http = require('http').createServer(app);
+const io = require('socket.io');
 const session = require('express-session');
 const passport = require('passport');
 const routes = require('./routes.js');
@@ -33,11 +35,14 @@ myDB(async client => {
   app.route('/').get((req, res) => {
     res.render('index', { title: e, message: 'Unable to connect to database' });
   });
+  io.on('connection', socket => {
+    console.log('A user has connected');
+  });
 });
 
 
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+http.listen(PORT, () => {
   console.log('Listening on port ' + PORT);
 });
